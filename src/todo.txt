@@ -1,0 +1,6 @@
+! pluginize
+
+- add mass
+- add varying volumes
+- minecraft fly camera
+- cursor projection distance
