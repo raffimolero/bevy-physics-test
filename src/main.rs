@@ -1,6 +1,7 @@
 use std::{thread, time::Duration};
 
 use bevy::{
+    input::mouse::MouseMotion,
     math::{vec2, vec3},
     prelude::*,
 };
@@ -126,15 +127,16 @@ fn spawn(
     let material = materials.add(Color::BLUE.into());
     // spawn free objects
     for x in (-100..=100).step_by(20) {
-        for z in (-40..40).step_by(20) {
-            spawn_mesh(
-                &mut commands,
-                mesh.clone(),
-                material.clone(),
-                vec3(x as f32, 0.0, z as f32),
-                vec3(0.0, (x / 10) as f32, 0.0),
-            );
-        }
+        let z = 0.0;
+        // for z in (-40..40).step_by(20) {
+        spawn_mesh(
+            &mut commands,
+            mesh.clone(),
+            material.clone(),
+            vec3(x as f32, 0.0, z as f32),
+            vec3(0.0, (x / 10) as f32, 0.0),
+        );
+        // }
     }
 
     let material = materials.add(Color::GREEN.into());
@@ -232,6 +234,7 @@ fn follow_mouse(
         let mut pos = ndc_to_world.project_point3(
             (ndc * camera_transform.translation.length() /* * 0.75 */ * 10.0).extend(1.0),
         );
+        // println!("{pos:?}");
         pos = camera_transform.rotation * pos;
         // pos += camera_transform.translation * 0.25;
 
@@ -271,8 +274,10 @@ fn options(
 
 fn camera_motion(
     time: Res<Time>,
-    mut camera: Query<(&Speed, &mut Transform), With<Camera>>,
     keys: Res<Input<KeyCode>>,
+    buttons: Res<Input<MouseButton>>,
+    mut motion_evr: EventReader<MouseMotion>,
+    mut camera: Query<(&Speed, &mut Transform), With<Camera>>,
 ) {
     let delta = time.delta_seconds();
     use KeyCode::*;
