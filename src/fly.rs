@@ -1,9 +1,50 @@
 use bevy::{input::mouse::MouseMotion, math::vec3, prelude::*};
 
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+enum Mode {
+    PointClick,
+    LookMove,
+}
+
 pub struct FlyControlsPlugin;
 impl Plugin for FlyControlsPlugin {
     fn build(&self, app: &mut App) {
-        app.add_system(mouse_lookaround).add_system(keyboard_motion);
+        app.add_state(Mode::PointClick)
+            .add_system_set(SystemSet::on_update(Mode::PointClick).with_system(enter_look_around))
+            .add_system_set(
+                SystemSet::on_update(Mode::LookMove)
+                    .with_system(exit_look_around)
+                    .with_system(mouse_lookaround)
+                    .with_system(keyboard_motion),
+            );
+    }
+}
+
+fn enter_look_around(
+    mut mode: ResMut<State<Mode>>,
+    mut windows: ResMut<Windows>,
+    btn: Res<Input<MouseButton>>,
+) {
+    let window = windows.get_primary_mut().unwrap();
+
+    if btn.just_pressed(MouseButton::Left) {
+        window.set_cursor_lock_mode(true);
+        window.set_cursor_visibility(false);
+        mode.set(Mode::LookMove).unwrap();
+    }
+}
+
+fn exit_look_around(
+    mut mode: ResMut<State<Mode>>,
+    mut windows: ResMut<Windows>,
+    key: Res<Input<KeyCode>>,
+) {
+    let window = windows.get_primary_mut().unwrap();
+
+    if key.just_pressed(KeyCode::Escape) {
+        window.set_cursor_lock_mode(false);
+        window.set_cursor_visibility(true);
+        mode.set(Mode::PointClick).unwrap();
     }
 }
 
@@ -77,44 +118,11 @@ fn keyboard_motion(
     });
 }
 
-fn cursor_grab_system(
-    mut windows: ResMut<Windows>,
-    btn: Res<Input<MouseButton>>,
-    key: Res<Input<KeyCode>>,
-) {
-    let window = windows.get_primary_mut().unwrap();
-
-    if btn.just_pressed(MouseButton::Left) {
-        window.set_cursor_lock_mode(true);
-        window.set_cursor_visibility(false);
-    }
-
-    if key.just_pressed(KeyCode::Escape) {
-        window.set_cursor_lock_mode(false);
-        window.set_cursor_visibility(true);
-    }
-}
-
 /// mouse controls for looking around.
 fn mouse_lookaround(
-    mut windows: ResMut<Windows>,
-    buttons: Res<Input<MouseButton>>,
     mut mouse_events: EventReader<MouseMotion>,
     mut controllables: Query<(&LookSens, &mut Facing, &mut Transform), With<FlyControls>>,
 ) {
-    let window = windows.get_primary_mut().unwrap();
-
-    let cursor_locked = window.cursor_locked();
-    if buttons.just_pressed(MouseButton::Left) {
-        window.set_cursor_lock_mode(!cursor_locked);
-        window.set_cursor_visibility(cursor_locked);
-    }
-
-    // don't look around when the mouse isn't captured.
-    if !cursor_locked {
-        return;
-    }
-
     // compile all the movements into one variable
     let mut total_delta = Vec2::ZERO;
     for motion in mouse_events.iter() {

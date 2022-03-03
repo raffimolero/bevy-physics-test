@@ -19,7 +19,7 @@ fn setup(
     let mesh = meshes.add(
         shape::Icosphere {
             radius: 10.0,
-            subdivisions: 1,
+            subdivisions: 0,
         }
         .into(),
     );
