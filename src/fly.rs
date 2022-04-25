@@ -55,7 +55,7 @@ pub struct FlyControls;
 pub struct Speed(Vec3);
 impl Default for Speed {
     fn default() -> Self {
-        Self(Vec3::splat(2_f32.powi(8)))
+        Self(Vec3::splat(2_f32.powi(4)))
     }
 }
 

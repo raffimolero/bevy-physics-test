@@ -3,12 +3,13 @@ mod physics;
 
 use bevy::prelude::*;
 use fly::*;
-use physics::SphereBuilder;
+use physics::{PhysicsPlugin, SphereBuilder};
 
 fn main() {
     App::new()
         .add_plugins(DefaultPlugins)
         .add_plugin(FlyControlsPlugin)
+        .add_plugin(PhysicsPlugin)
         .add_startup_system(setup)
         .run();
 }
@@ -20,6 +21,7 @@ fn setup(
 ) {
     let sphere = SphereBuilder {
         location: Vec3::new(0.0, 0.0, -5.0),
+        velocity: Vec3::new(0.0, 0.0, -1.0),
         ..default()
     }
     .build(&mut meshes, &mut materials);

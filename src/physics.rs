@@ -3,7 +3,7 @@ use bevy::prelude::*;
 #[derive(Component)]
 pub struct SphereCollision;
 
-#[derive(Component)]
+#[derive(Component, Deref, DerefMut)]
 pub struct Mass(pub f32);
 impl Default for Mass {
     fn default() -> Self {
@@ -11,7 +11,7 @@ impl Default for Mass {
     }
 }
 
-#[derive(Component)]
+#[derive(Component, Deref, DerefMut)]
 pub struct Radius(pub f32);
 impl Default for Radius {
     fn default() -> Self {
@@ -19,8 +19,20 @@ impl Default for Radius {
     }
 }
 
-#[derive(Component, Default)]
+#[derive(Component, Default, Deref, DerefMut)]
 pub struct Velocity(pub Vec3);
+
+pub struct PhysicsPlugin;
+impl Plugin for PhysicsPlugin {
+    fn build(&self, app: &mut App) {
+        app.add_system(motion_system);
+    }
+}
+pub fn motion_system(mut moving_objects: Query<(&Velocity, &mut Transform)>) {
+    moving_objects.for_each_mut(|(velocity, mut transform)| {
+        transform.translation += velocity.0;
+    });
+}
 
 #[derive(Bundle)]
 pub struct SphereBundle {
