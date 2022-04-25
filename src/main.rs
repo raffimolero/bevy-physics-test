@@ -1,7 +1,9 @@
 mod fly;
+mod physics;
 
 use bevy::prelude::*;
 use fly::*;
+use physics::SphereBuilder;
 
 fn main() {
     App::new()
@@ -13,24 +15,15 @@ fn main() {
 
 fn setup(
     mut commands: Commands,
-    mut materials: ResMut<Assets<StandardMaterial>>,
     mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    let mesh = meshes.add(
-        shape::Icosphere {
-            radius: 10.0,
-            subdivisions: 0,
-        }
-        .into(),
-    );
-    let material = materials.add(Color::RED.into());
-
-    commands.spawn_bundle(PbrBundle {
-        mesh,
-        material,
-        ..Default::default()
-    });
-
+    let sphere = SphereBuilder {
+        location: Vec3::new(0.0, 0.0, -5.0),
+        ..default()
+    }
+    .build(&mut meshes, &mut materials);
+    commands.spawn_bundle(sphere);
     commands
         .spawn_bundle(PerspectiveCameraBundle::new_3d())
         .insert_bundle(FlyControlsBundle::default());
