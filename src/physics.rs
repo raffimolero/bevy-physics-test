@@ -1,13 +1,13 @@
 use bevy::prelude::*;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-struct Paused(bool);
+pub struct Paused(pub bool);
 
 #[derive(Deref, DerefMut, Clone)]
-pub struct Gravity(f32);
+pub struct Gravity(pub f32);
 
 #[derive(Component, Clone)]
-pub struct SphereCollider;
+pub struct Bounciness(pub f32);
 
 #[derive(Component, Deref, DerefMut, Clone)]
 pub struct Mass(pub f32);
@@ -38,8 +38,10 @@ impl Plugin for PhysicsPlugin {
             .add_system(pause_system)
             .add_system_set(
                 SystemSet::on_update(Paused(false))
-                    .with_system(velocity_system)
-                    .with_system(gravity_system),
+                    .with_system(gravity_system)
+                    .with_system(velocity_system.after(gravity_system))
+                    .with_system(collision_system.after(velocity_system))
+                    .with_system(debug_stepper_system.after(collision_system)),
             );
     }
 }
@@ -49,6 +51,10 @@ fn pause_system(mut mode: ResMut<State<Paused>>, key: Res<Input<KeyCode>>) {
         let paused = mode.current().0;
         mode.set(Paused(!paused)).unwrap();
     }
+}
+
+fn debug_stepper_system(mut mode: ResMut<State<Paused>>) {
+    mode.set(Paused(true)).unwrap();
 }
 
 pub fn velocity_system(mut objects: Query<(&Velocity, &mut Transform)>) {
@@ -77,19 +83,55 @@ pub fn gravity_system(
     });
 }
 
+pub fn collision_system(
+    mut objects: Query<(&Bounciness, &Radius, &Mass, &mut Transform, &mut Velocity)>,
+) {
+    let mut pairs = objects.iter_combinations_mut::<2>();
+    while let Some(pair) = pairs.fetch_next() {
+        // unpack stuff
+        #[rustfmt::skip]
+        let [
+            (a_mass, a_radius, a_bounciness, mut a_transform, mut a_velocity),
+            (b_mass, b_radius, b_bounciness, mut b_transform, mut b_velocity),
+        ] = pair;
+
+        // calculate whether they collided
+        let positional_difference = b_transform.translation - a_transform.translation;
+        let distance_squared = positional_difference.length_squared();
+        let combined_radius = a_radius.0 + b_radius.0;
+        let collided = distance_squared < combined_radius.powi(2);
+
+        // if they don't collide, skip this pair
+        if !collided {
+            continue;
+        }
+
+        // find the collision depth
+        let distance = distance_squared.sqrt();
+        let collision_depth = combined_radius - distance;
+
+        // get their masses relative to each other
+        let combined_mass = a_mass.0 + b_mass.0;
+        let a_mass_fraction = a_mass.0 / combined_mass;
+        let b_mass_fraction = b_mass.0 / combined_mass;
+
+        // shift their positions to no longer collide
+        let direction_a_to_b = positional_difference / distance;
+        let collision_vector = direction_a_to_b * collision_depth;
+        b_transform.translation += collision_vector * a_mass_fraction;
+        a_transform.translation -= collision_vector * b_mass_fraction;
+    }
+}
+
 #[derive(Bundle, Clone)]
 pub struct SphereBundle {
-    pub mass: Mass,
     pub radius: Radius,
-    pub velocity: Velocity,
     #[bundle]
     pub mesh: PbrBundle,
 }
 
 pub struct SphereBuilder {
-    pub mass: f32,
     pub radius: f32,
-    pub velocity: Vec3,
     pub location: Vec3,
     pub color: Color,
     pub subdivisions: usize,
@@ -109,9 +151,7 @@ impl SphereBuilder {
         );
         let material = materials.add(self.color.into());
         SphereBundle {
-            mass: Mass(self.mass),
             radius: Radius(self.radius),
-            velocity: Velocity(self.velocity),
             mesh: PbrBundle {
                 mesh,
                 material,
@@ -124,9 +164,7 @@ impl SphereBuilder {
 impl Default for SphereBuilder {
     fn default() -> Self {
         Self {
-            mass: 1.0,
             radius: 1.0,
-            velocity: default(),
             location: default(),
             color: Color::ORANGE_RED,
             subdivisions: 0,
