@@ -65,7 +65,7 @@ impl Default for Speed {
 pub struct SprintMultiplier(f32);
 impl Default for SprintMultiplier {
     fn default() -> Self {
-        Self(2.0)
+        Self(4.0)
     }
 }
 

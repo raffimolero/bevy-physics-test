@@ -65,7 +65,7 @@ pub fn gravity_system(
     attractees.for_each_mut(|(from_transform, mut from_velocity)| {
         attractors.for_each(|(dest_transform, dest_mass)| {
             let positional_difference = dest_transform.translation - from_transform.translation;
-            let distance_squared = positional_difference.length_squared().max(5.0);
+            let distance_squared = positional_difference.length_squared().max(1.0);
 
             let acceleration = gravity.0 * dest_mass.0 / distance_squared;
 
@@ -85,6 +85,7 @@ pub struct SphereBundle {
     #[bundle]
     pub mesh: PbrBundle,
 }
+
 pub struct SphereBuilder {
     pub mass: f32,
     pub radius: f32,
@@ -120,7 +121,6 @@ impl SphereBuilder {
         }
     }
 }
-
 impl Default for SphereBuilder {
     fn default() -> Self {
         Self {
