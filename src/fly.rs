@@ -25,13 +25,14 @@ fn enter_look_around(
     mut windows: ResMut<Windows>,
     btn: Res<Input<MouseButton>>,
 ) {
-    let window = windows.get_primary_mut().unwrap();
-
-    if btn.just_pressed(MouseButton::Left) {
-        window.set_cursor_lock_mode(true);
-        window.set_cursor_visibility(false);
-        mode.set(Mode::LookMove).unwrap();
+    if !btn.just_pressed(MouseButton::Left) {
+        return;
     }
+
+    let window = windows.get_primary_mut().unwrap();
+    window.set_cursor_lock_mode(true);
+    window.set_cursor_visibility(false);
+    mode.set(Mode::LookMove).unwrap();
 }
 
 fn exit_look_around(
@@ -39,13 +40,14 @@ fn exit_look_around(
     mut windows: ResMut<Windows>,
     key: Res<Input<KeyCode>>,
 ) {
-    let window = windows.get_primary_mut().unwrap();
-
-    if key.just_pressed(KeyCode::Escape) {
-        window.set_cursor_lock_mode(false);
-        window.set_cursor_visibility(true);
-        mode.set(Mode::PointClick).unwrap();
+    if !key.just_pressed(KeyCode::Escape) {
+        return;
     }
+
+    let window = windows.get_primary_mut().unwrap();
+    window.set_cursor_lock_mode(false);
+    window.set_cursor_visibility(true);
+    mode.set(Mode::PointClick).unwrap();
 }
 
 #[derive(Component, Default)]
@@ -67,7 +69,7 @@ impl Default for LookSens {
     }
 }
 
-/// `Facing.0` is the rotation along the y axis, which forms a *horizontal circle.*
+/// `Facing.0` is the rotation along the y axis, which forms a *full horizontal circle.*
 ///
 /// `Facing.1` is the rotation along the x axis, which should form a *vertical semicircle facing forward.*
 #[derive(Component, Clone, Copy, Default)]
