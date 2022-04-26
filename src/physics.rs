@@ -33,6 +33,7 @@ pub struct PhysicsPlugin {
 }
 impl Plugin for PhysicsPlugin {
     fn build(&self, app: &mut App) {
+        #[rustfmt::skip] // because trailing comma
         app.insert_resource(Gravity(self.gravity))
             .add_state(Paused(true))
             .add_system(pause_system)
@@ -41,7 +42,7 @@ impl Plugin for PhysicsPlugin {
                     .with_system(gravity_system)
                     .with_system(velocity_system.after(gravity_system))
                     .with_system(collision_system.after(velocity_system))
-                    .with_system(debug_stepper_system.after(collision_system)),
+                    // .with_system(debug_stepper_system.after(collision_system))
             );
     }
 }
@@ -71,7 +72,11 @@ pub fn gravity_system(
     attractees.for_each_mut(|(from_transform, mut from_velocity)| {
         attractors.for_each(|(dest_transform, dest_mass)| {
             let positional_difference = dest_transform.translation - from_transform.translation;
-            let distance_squared = positional_difference.length_squared().max(1.0);
+            let distance_squared = positional_difference.length_squared();
+
+            if distance_squared == 0.0 {
+                return;
+            }
 
             let acceleration = gravity.0 * dest_mass.0 / distance_squared;
 
@@ -91,8 +96,8 @@ pub fn collision_system(
         // unpack stuff
         #[rustfmt::skip]
         let [
-            (a_mass, a_radius, a_bounciness, mut a_transform, mut a_velocity),
-            (b_mass, b_radius, b_bounciness, mut b_transform, mut b_velocity),
+            (a_bounciness, a_radius, a_mass, mut a_transform, mut a_velocity),
+            (b_bounciness, b_radius, b_mass, mut b_transform, mut b_velocity),
         ] = pair;
 
         // calculate whether they collided
@@ -110,16 +115,33 @@ pub fn collision_system(
         let distance = distance_squared.sqrt();
         let collision_depth = combined_radius - distance;
 
-        // get their masses relative to each other
-        let combined_mass = a_mass.0 + b_mass.0;
-        let a_mass_fraction = a_mass.0 / combined_mass;
-        let b_mass_fraction = b_mass.0 / combined_mass;
-
-        // shift their positions to no longer collide
+        // find how they collide
         let direction_a_to_b = positional_difference / distance;
         let collision_vector = direction_a_to_b * collision_depth;
-        b_transform.translation += collision_vector * a_mass_fraction;
+
+        // get their masses relative to each other
+        let combined_mass = a_mass.0 + b_mass.0;
+        let (a_mass_fraction, b_mass_fraction) = if combined_mass != 0.0 {
+            (a_mass.0 / combined_mass, b_mass.0 / combined_mass)
+        } else {
+            // zero mass objects have equal mass
+            (0.5, 0.5)
+        };
+
+        // shift their positions to no longer collide
+        // mass forces the other to make more way; a affects b, b affects a
         a_transform.translation -= collision_vector * b_mass_fraction;
+        b_transform.translation += collision_vector * a_mass_fraction;
+
+        // project their velocities to find how quickly they impacted each other
+        let a_impact_velocity = a_velocity.project_onto_normalized(direction_a_to_b);
+        let b_impact_velocity = -b_velocity.project_onto_normalized(direction_a_to_b);
+        let combined_impact_velocity = a_impact_velocity + b_impact_velocity;
+
+        // calculate how much bounce there was
+        let bounce_power = combined_impact_velocity * a_bounciness.0 * b_bounciness.0 * 2.0;
+        a_velocity.0 -= bounce_power * b_mass_fraction;
+        b_velocity.0 += bounce_power * a_mass_fraction;
     }
 }
 

@@ -43,22 +43,22 @@ fn setup(
             commands
                 .spawn_bundle(sphere.clone())
                 .insert(Velocity::default())
-                .insert(Mass(uniform.sample(&mut rng) + 1.0))
+                .insert(Mass(uniform.sample(&mut rng) / 2.0 + 1.0))
                 .insert(Bounciness(1.0));
         }
     }
 
-    // sphere.mesh.transform.translation = Vec3::new(0.0, 2.0, -50.0);
+    // sphere.mesh.transform.translation = Vec3::new(-2.0, 2.0, -50.0);
     // commands
     //     .spawn_bundle(sphere.clone())
-    //     .insert(Velocity::default())
-    //     .insert(Mass(1.0))
+    //     .insert(Velocity(Vec3::new(0.0, 0.0, 0.0)))
+    //     .insert(Mass(0.0))
     //     .insert(Bounciness(1.0));
 
-    // sphere.mesh.transform.translation = Vec3::new(0.0, -2.0, -50.0);
+    // sphere.mesh.transform.translation = Vec3::new(-2.0, -2.0, -50.0);
     // commands
     //     .spawn_bundle(sphere.clone())
-    //     .insert(Velocity::default())
-    //     .insert(Mass(1.0))
+    //     .insert(Velocity(Vec3::new(0.0, 0.1, 0.0)))
+    //     .insert(Mass(0.0))
     //     .insert(Bounciness(1.0));
 }
