@@ -19,22 +19,9 @@ fn setup(
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
-    // commands.spawn_bundle(
-    //     SphereBuilder {
-    //         location: Vec3::new(0.0, 0.0, -15.0),
-    //         velocity: Vec3::new(0.0, 0.0, -1.0),
-    //         ..default()
-    //     }
-    //     .build(&mut meshes, &mut materials),
-    // );
-    // commands.spawn_bundle(
-    //     SphereBuilder {
-    //         location: Vec3::new(1.0, 0.0, -20.0),
-    //         velocity: Vec3::new(0.0, 1.0, 0.0),
-    //         ..default()
-    //     }
-    //     .build(&mut meshes, &mut materials),
-    // );
+    commands
+        .spawn_bundle(PerspectiveCameraBundle::new_3d())
+        .insert_bundle(FlyControlsBundle::default());
 
     let mut sphere = SphereBuilder {
         // marked default are the stuff that should be programmatically modified.
@@ -49,8 +36,4 @@ fn setup(
         sphere.velocity.x = x as f32 * 0.1;
         commands.spawn_bundle(sphere.clone());
     }
-
-    commands
-        .spawn_bundle(PerspectiveCameraBundle::new_3d())
-        .insert_bundle(FlyControlsBundle::default());
 }

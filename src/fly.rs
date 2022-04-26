@@ -62,6 +62,14 @@ impl Default for Speed {
 }
 
 #[derive(Component, Clone, Copy)]
+pub struct SprintMultiplier(f32);
+impl Default for SprintMultiplier {
+    fn default() -> Self {
+        Self(2.0)
+    }
+}
+
+#[derive(Component, Clone, Copy)]
 pub struct LookSens(pub f32, pub f32);
 impl Default for LookSens {
     fn default() -> Self {
@@ -84,6 +92,7 @@ impl From<Facing> for Quat {
 pub struct FlyControlsBundle {
     tag: FlyControls,
     speed: Speed,
+    sprint_speed: SprintMultiplier,
     facing: Facing,
     look_sens: LookSens,
 }
@@ -92,7 +101,10 @@ pub struct FlyControlsBundle {
 fn keyboard_motion(
     time: Res<Time>,
     keys: Res<Input<KeyCode>>,
-    mut controllables: Query<(&Speed, &Facing, &mut Transform), With<FlyControls>>,
+    mut controllables: Query<
+        (&Speed, &SprintMultiplier, &Facing, &mut Transform),
+        With<FlyControls>,
+    >,
 ) {
     use KeyCode::*;
     let delta = time.delta_seconds();
@@ -112,11 +124,14 @@ fn keyboard_motion(
         return;
     }
 
+    let sprinting = keys.pressed(LControl);
+
     // move things.
-    controllables.for_each_mut(|(speed, facing, mut transform)| {
+    controllables.for_each_mut(|(speed, sprint_multiplier, facing, mut transform)| {
         // rotate the motion based on where the object is facing horizontally.
         let compass_direction = Quat::from_rotation_y(facing.0);
-        transform.translation += compass_direction * (movement * speed.0);
+        let multiplier = if sprinting { sprint_multiplier.0 } else { 1.0 };
+        transform.translation += compass_direction * (movement * speed.0 * multiplier);
     });
 }
 
