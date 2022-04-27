@@ -69,25 +69,11 @@ fn setup(
             }
             .build(&mut meshes, &mut materials);
 
-            commands
-                .spawn_bundle(sphere)
-                .insert(Velocity::default())
-                .insert(Mass(mass + 0.5))
-                .insert(Bounciness(1.0));
+            commands.spawn_bundle(sphere).insert_bundle((
+                Velocity::default(),
+                Mass(mass + 0.5),
+                Bounciness(1.0),
+            ));
         }
     }
-
-    // sphere.mesh.transform.translation = Vec3::new(-2.0, 2.0, -50.0);
-    // commands
-    //     .spawn_bundle(sphere.clone())
-    //     .insert(Velocity(Vec3::new(0.0, 0.0, 0.0)))
-    //     .insert(Mass(0.0))
-    //     .insert(Bounciness(1.0));
-
-    // sphere.mesh.transform.translation = Vec3::new(-2.0, -2.0, -50.0);
-    // commands
-    //     .spawn_bundle(sphere.clone())
-    //     .insert(Velocity(Vec3::new(0.0, 0.1, 0.0)))
-    //     .insert(Mass(0.0))
-    //     .insert(Bounciness(1.0));
 }
